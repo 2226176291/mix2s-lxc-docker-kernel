@@ -87,27 +87,14 @@ jobs:
           rm -rf utils
           git clone https://github.com/tomxi1997/lxc-docker-support-for-android.git utils
 
-          # 移除 LXC 补丁中强制选中的越权语句
-          sed -i '/select CFS_BANDWIDTH/d' utils/Kconfig
-          sed -i '/select DOCKER_STATISTICS/d' utils/Kconfig
-          sed -i '/select BLK_DEV_THROTTLING/d' utils/Kconfig
-          sed -i '/select CFQ_GROUP_IOSCHED/d' utils/Kconfig
-          sed -i '/select BRIDGE_VLAN_FILTERING/d' utils/Kconfig
           
           echo 'source "utils/Kconfig"' >> "Kconfig"
           echo "CONFIG_DOCKER=y" >> $DEFCONFIG
           
-          # 在 defconfig 显式禁用会引发代码冲突的调度器特性
-          echo "# CONFIG_CFS_BANDWIDTH is not set" >> $DEFCONFIG
-          echo "# CONFIG_DOCKER_STATISTICS is not set" >> $DEFCONFIG
-
           # 禁用偏执网络
           sed -i '/CONFIG_ANDROID_PARANOID_NETWORK/d' $DEFCONFIG
           echo "# CONFIG_ANDROID_PARANOID_NETWORK is not set" >> $DEFCONFIG
           
-          # 显式禁用发生冲突的 Block 特性
-          echo "# CONFIG_BLK_DEV_THROTTLING is not set" >> $DEFCONFIG
-          echo "# CONFIG_CFQ_GROUP_IOSCHED is not set" >> $DEFCONFIG
 
           # 修复内核源码自带的 QVR 设备树语法错误 (sdm845)
           sed -i '/sdm845-v2-qvr-evt.dtb/d' arch/arm64/boot/dts/qcom/Makefile
