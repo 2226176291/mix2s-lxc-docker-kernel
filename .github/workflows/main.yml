@@ -36,6 +36,12 @@ jobs:
         with:
           path: kernel
 
+      - name: 同步补丁仓库
+        uses: actions/checkout@v4
+        with:
+          ref: wipeonfork-patches
+          path: patchrepo
+
       - name: 缓存Clang
         id: cache-clang
         uses: actions/cache@v4
@@ -125,6 +131,19 @@ jobs:
           if [ -f net/netfilter/xt_qtaguid.c ]; then
               patch -p0 < utils/xt_qtaguid.patch
           fi
+
+      - name: 回移植 MADV_WIPEONFORK (4.14 特性，修复 runc 在 4.9 内核崩溃)
+        working-directory: kernel
+        run: |
+          patch -p1 -F1 --forward < ../patchrepo/patches/df3735c5b40f.patch || true
+          patch -p1 -F1 --forward < ../patchrepo/patches/d2cd9ede6e19.patch || true
+          patch -p1 -F1 --forward < ../patchrepo/patches/93949bb21b52.patch || true
+          patch -p1 --forward < ../patchrepo/patches/wipeonfork-fixup.patch
+          grep -q VM_WIPEONFORK include/linux/mm.h
+          grep -q VM_WIPEONFORK include/uapi/asm-generic/mman-common.h
+          grep -q VM_WIPEONFORK mm/madvise.c
+          grep -q VM_WIPEONFORK kernel/fork.c
+          echo "MADV_WIPEONFORK backport verified"
 
       - name: 编译
         working-directory: kernel
